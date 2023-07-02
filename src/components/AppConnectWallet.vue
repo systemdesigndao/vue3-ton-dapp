@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { onMounted } from 'vue'
-import {TonConnect} from '@tonconnect/sdk';
+import {TonConnect} from '@tonconnect/sdk'
 import QRCodeStyling from './QRCodeStyling.vue';
-
 import { ConnectedWalletFromAPI, useWalletStore } from '../stores'
 
 const store = useWalletStore()
@@ -30,7 +29,6 @@ async function postData(url = "", data = {}) {
 
 
 const connect = async (wallets: 'tonkeeper' | 'tonhub') => {
-  // const rawAddress = store.entity.connector.wallet.account.address; // like '0:abcdef123456789...'
   // console.log(new Address(rawAddress).toString('base64', { bounceable: true }));
   const d = await postData('https://ton-dapp-backend.systemdesigndao.xyz/ton-proof/generatePayload');
   const { payload } = await d.json();
@@ -46,7 +44,27 @@ const connect = async (wallets: 'tonkeeper' | 'tonhub') => {
   })
 }
 
-onMounted(() => {
+const sendTx = async () => {
+  const transaction = {
+      validUntil: Date.now() + 1000000,
+      messages: [
+          {
+            address: store.wallet?.address.raw!,
+            amount: "60000000", 
+          }
+      ]
+  }
+
+  try {
+      await store.entity?.sendTransaction(transaction);
+
+      alert('Transaction was sent successfully');
+  } catch (e) {
+      console.error(e);
+  }
+}
+
+onMounted(() => {  
   const tonConnect = new TonConnect({
     manifestUrl: 'https://about.systemdesigndao.xyz/ton-connect.manifest.json',
   });
@@ -96,12 +114,13 @@ const { wallet, connecting } = storeToRefs(store)
 </script>
 
 <template>
-  <div v-if="wallet === undefined">
-    <button  @click="connect('tonkeeper')">Connect tonkeeper</button>
-    <button  @click="connect('tonhub')">Connect tonhub</button>
+  <div v-if="wallet === undefined" style="display: flex; flex-direction: column;">
+    <button @click="connect('tonkeeper')">Connect tonkeeper</button>
+    <button @click="connect('tonhub')">Connect tonhub</button>
     <QRCodeStyling v-if="connecting?.link" :text="connecting.link" />
   </div>
   <div v-else>
     <pre>{{wallet}}</pre>
+    <button @click="sendTx">Send tx</button>
   </div>
 </template>
