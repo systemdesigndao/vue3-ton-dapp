@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { ref, onMounted, nextTick } from 'vue'
-import {TonConnectUI} from '@tonconnect/ui'
-import { toUserFriendlyAddress } from '@tonconnect/sdk';
-import { Address } from 'ton3-core';
+import { onMounted } from 'vue'
+import {TonConnect} from '@tonconnect/sdk';
 import QRCodeStyling from './QRCodeStyling.vue';
 
 import { ConnectedWalletFromAPI, useWalletStore } from '../stores'
 
 const store = useWalletStore()
-
-defineProps<{ anyProp: string }>()
 
 const walletConnectionSource = {
   tonkeeper: {
@@ -39,11 +35,11 @@ const connect = async (wallets: 'tonkeeper' | 'tonhub') => {
   const d = await postData('https://ton-dapp-backend.systemdesigndao.xyz/ton-proof/generatePayload');
   const { payload } = await d.json();
 
-  if (store?.entity?.connector.connected) {
-    await store.entity.connector.disconnect();
+  if (store?.entity?.connected) {
+    await store.entity.disconnect();
   }
     
-  const link = store.entity?.connector.connect(walletConnectionSource[wallets], { tonProof: payload });
+  const link = store.entity?.connect(walletConnectionSource[wallets], { tonProof: payload });
 
   store.setConnecting({
     link,
@@ -51,13 +47,13 @@ const connect = async (wallets: 'tonkeeper' | 'tonhub') => {
 }
 
 onMounted(() => {
-  const tonConnectUI = new TonConnectUI({
+  const tonConnect = new TonConnect({
     manifestUrl: 'https://about.systemdesigndao.xyz/ton-connect.manifest.json',
   });
 
-  store.setEntity(tonConnectUI);
+  store.setEntity(tonConnect);
 
-  const unsubscribe = tonConnectUI.onStatusChange(async wallet => {
+  const unsubscribe = tonConnect.onStatusChange(async wallet => {
 			if (!wallet) {
 				return;
 			}
